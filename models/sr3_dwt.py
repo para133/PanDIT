@@ -172,7 +172,6 @@ class UNetSR3(nn.Module):
         if self.self_condition:
             self_cond = default(self_cond, x)
             x = torch.cat([self_cond, x], dim=1)
-
         # if cond is not None:
         #     x = torch.cat([cond, x], dim=1)
 
@@ -190,7 +189,6 @@ class UNetSR3(nn.Module):
         t = self.noise_level_mlp(time) if exists(self.noise_level_mlp) else None
 
         feats = []
-        # TODO: 在encoder中加入cross attn
         for layer in self.downs:
             if isinstance(layer, ResnetBlocWithAttn):
                 x = layer(

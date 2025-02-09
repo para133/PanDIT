@@ -38,7 +38,7 @@ def predict(
         channel_mults=(1,2,2,4),#(1, 2, 2, 4),  # (64, 32, 16, 8)
         attn_res=(8,),
         dropout=0.2,
-        image_size=64,
+        image_size=image_size,
         self_condition=True,
     ).to(device)
 

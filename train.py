@@ -27,14 +27,14 @@ def train(
     # image settings
     ms_num_channel = 3,
     pan_num_channel = 1,
-    image_size=64,
+    image_size=128,
     # diffusion settings
     schedule_type="cosine",
     n_steps=3_000,
     max_iterations=400_000,
     # optimizer settings
     batch_size=128,
-    lr_d=1e-4,
+    lr_d=1e-5,
     show_recon=False,
     # pretrain settings
     pretrain_weight=None,
@@ -50,7 +50,7 @@ def train(
         channel_mults=(1,2,2,4),#(1, 2, 2, 4),  # (64, 32, 16, 8)
         attn_res=(8,),
         dropout=0.2,
-        image_size=64,
+        image_size=image_size,
         self_condition=True,
     ).to(device)
     
@@ -158,7 +158,6 @@ def train(
                 ax.imshow(x_show)
                 ax.set_axis_off()
                 plt.tight_layout(pad=0)
-                # plt.show()
                 fig.savefig(
                     f"./samples/recon_x/iter_{iterations}.png",
                     dpi=200,
@@ -215,10 +214,8 @@ def train(
                             pad_inches=0,
                         )
                         logger.print("---diffusion result---")
-                        logger.print(analysis_d.last_acc)
-                    if i != 1:
-                        logger.print("---diffusion result---")
                         logger.print(analysis_d.print_str())
+
                 diffusion_dp.model.train()
                 setattr(ema_updater.model, "image_size", 64)
 
@@ -253,7 +250,7 @@ if __name__ == "__main__":
         n_steps=500,
         max_iterations=400_000,
         batch_size=1,
-        lr_d=1e-4,
+        lr_d=1e-5,
         show_recon=True,
         pretrain_weight=None,
         pretrain_iterations=None,

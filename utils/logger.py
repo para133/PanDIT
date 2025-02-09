@@ -58,12 +58,12 @@ class TensorboardLogger:
         self.writer = writer.SummaryWriter(place, **tb_kwargs)
 
         assert file_logger_name is not None, '@file_logger_name should be set'
-        self.file_writer = PrintLogger(os.path.join(file_dir, file_logger_name + '.log'))
+        self.file_writer = PrintLogger(os.path.join(file_dir, file_logger_name + '.txt'))
 
         self._tb_print = partial(self.file_writer.log, level=logging.DEBUG)
 
     def print(self, msg: str, level=logging.INFO):
-        self.file_writer.log(msg, level)
+        self.file_writer.log(msg)
 
     @beartype
     def log_scalar(self, tag: str, value: float, step: int):
@@ -93,43 +93,13 @@ class TensorboardLogger:
 
 
 class PrintLogger:
-    def __init__(self, place, level=logging.DEBUG) -> None:
-        assert place.endswith(".log"), "@place should be a file path"
-
+    def __init__(self, place) -> None:
         self.place = place
 
-        self.logger = logging.getLogger()
-        self.logger.setLevel(level)
-        
-        _dir = os.path.dirname(place)
-        assert os.path.exists(_dir), f"dir {_dir} not exists"
-        
-        file_handler = logging.FileHandler(place)
-        file_handler.setLevel(level)
-
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setLevel(logging.INFO)
-
-        formatter = logging.Formatter(
-            r"%(asctime)s - %(levelname)s - %(message)s",
-            datefmt=r"%Y-%m-%d %H:%M:%S",
-        )
-        file_handler.setFormatter(formatter)
-        stream_handler.setFormatter(formatter)
-
-        self.logger.addHandler(file_handler)
-        self.logger.addHandler(stream_handler)
-
-        self.init_print()
-
-    def init_print(self):
-        self.log('log will print out in {}'.format(self.place))
-
-    def log(self, msg: str, level=logging.INFO):
-        self.logger.log(level, msg)
-
-    def print(self, *args, **kwargs):
-        self.log(*args, *kwargs)
+    def log(self, msg: str):
+        with open(self.place, 'a') as f:
+            f.write(msg + '\n')
+        print(msg)
 
 
 if __name__ == '__main__':

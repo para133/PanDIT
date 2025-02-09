@@ -24,7 +24,7 @@ class NonAnalysisPanAcc(object):
 class AnalysisPanAcc(object):
     def __init__(self, ergas_ratio: int = 4):
         # metric functions
-        self.__sam_ergas_psnr_cc_one_image = partial(
+        self.sam_ergas_psnr_cc_one_image = partial(
             analysis_accu, ratio=ergas_ratio, choices=5
         )
         self.ssim = ssim_batch_tensor_metric
@@ -71,7 +71,7 @@ class AnalysisPanAcc(object):
         acc_ds = {"SAM": 0.0, "ERGAS": 0.0, "PSNR": 0.0, "CC": 0.0}
         for i, (img1, img2) in enumerate(zip(gt, pred)):
             img1, img2 = self.permute_dim(img1, img2)
-            acc_d = self.__sam_ergas_psnr_cc_one_image(img1, img2)
+            acc_d = self.sam_ergas_psnr_cc_one_image(img1, img2)
             acc_ds = self._sum_acc(acc_ds, acc_d, i)
             acc_ds = self._average_acc(acc_ds, i + 1)
         return acc_ds

@@ -1,0 +1,6 @@
+/checkpoints/*
+__pycache__/
+/logs/*
+/output/*
+/runs/*
+/samples/*

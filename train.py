@@ -98,6 +98,7 @@ def train(
         ms_folder=os.path.join(valid_dataset_folder, 'ms_LR'),
         pan_folder=os.path.join(valid_dataset_folder, 'pan'),
         GT_folder=os.path.join(valid_dataset_folder, 'ms_HR'),
+        mode='test',
     )
     train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=4, shuffle=True)
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size, num_workers=4, shuffle=False)
@@ -166,7 +167,7 @@ def train(
                 )
 
             # do some sampling to check quality
-            if iterations % 5_000 == 0:
+            if iterations % 20_000 == 0:
                 diffusion_dp.model.eval()
                 ema_updater.ema_model.model.eval()
 

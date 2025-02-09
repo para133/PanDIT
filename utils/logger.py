@@ -60,9 +60,9 @@ class TensorboardLogger:
         assert file_logger_name is not None, '@file_logger_name should be set'
         self.file_writer = PrintLogger(os.path.join(file_dir, file_logger_name + '.txt'))
 
-        self._tb_print = partial(self.file_writer.log, level=logging.DEBUG)
+        self._tb_print = partial(self.file_writer.log)
 
-    def print(self, msg: str, level=logging.INFO):
+    def print(self, msg: str):
         self.file_writer.log(msg)
 
     @beartype

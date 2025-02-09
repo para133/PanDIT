@@ -64,6 +64,7 @@ def predict(
         ms_folder=os.path.join(dataset_folder, 'ms_LR'),
         pan_folder=os.path.join(dataset_folder, 'pan'),
         GT_folder=os.path.join(dataset_folder, 'ms_HR'),
+        mode='test',
     )
     loader = DataLoader(dataset, batch_size=batch_size, num_workers=4, shuffle=False)
     

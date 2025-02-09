@@ -10,10 +10,6 @@ import pywt
 import numpy as np
 
 torch.multiprocessing.set_sharing_strategy('file_system')
-
-# 获取路径
-py_path = os.path.abspath(__file__) 
-file_dir = os.path.dirname(py_path) 
         
 import os
 import numpy as np
@@ -23,6 +19,9 @@ from torchvision import transforms
 from PIL import Image
 import pywt
 
+# 获取路径
+py_path = os.path.abspath(__file__) 
+file_dir = os.path.dirname(py_path) 
 class PanDataset(Dataset):
     def __init__(self, ms_folder, pan_folder, GT_folder=None, mode='train'):
         self.images = [f for f in os.listdir(ms_folder) if f.endswith('.tif')]

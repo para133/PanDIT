@@ -27,6 +27,7 @@ def base2fourier_features(inputs, freq_start=7, freq_stop=8, step=1):
     return h
 
 
+# 预测模型，主要修改这里
 class UNetSR3(nn.Module):
     def __init__(
         self,

@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 
 from diffusion.diffusion_ddpm_pan import GaussianDiffusion
 from diffusion.diffusion_ddpm_pan import make_beta_schedule
-from models.sr3_dwt import UNetSR3 as Unet
+# from models.sr3_dwt import UNetSR3 as Unet
+from models.PanVIT import PanDiT
 from data.PanDataset import PanDataset
 from utils.optim_utils import EmaUpdater
 from utils.lr_scheduler import get_lr_from_optimizer, StepsAll
@@ -40,17 +41,36 @@ def train(
     pretrain_weight=None,
     pretrain_iterations=None,
 ):  
-    denoise_fn = Unet(
+    # denoise_fn = Unet(
+    #     in_channel=ms_num_channel,
+    #     out_channel=ms_num_channel,
+    #     lms_channel=ms_num_channel,
+    #     pan_channel=pan_num_channel,
+    #     inner_channel=32,
+    #     norm_groups=1,
+    #     channel_mults=(1,2,2,4),#(1, 2, 2, 4),  # (64, 32, 16, 8)
+    #     attn_res=(8,),
+    #     dropout=0.2,
+    #     image_size=image_size,
+    #     self_condition=True,
+    # ).to(device)
+    
+    denoise_fn = PanDiT(
         in_channel=ms_num_channel,
         out_channel=ms_num_channel,
+        image_size=image_size,
+        patch_size=16,
+        inner_channel=8,
+        noise_level_channel=128,
         lms_channel=ms_num_channel,
         pan_channel=pan_num_channel,
-        inner_channel=32,
-        norm_groups=1,
-        channel_mults=(1,2,2,4),#(1, 2, 2, 4),  # (64, 32, 16, 8)
-        attn_res=(8,),
-        dropout=0.2,
-        image_size=image_size,
+        cond_dim=ms_num_channel+pan_num_channel+6,
+        time_hidden_ratio=4,
+        num_dit_layers=6,
+        norm_groups=32,
+        num_heads=16,
+        mlp_ratio=4,
+        with_noise_level_emb=True,
         self_condition=True,
     ).to(device)
     
@@ -146,7 +166,7 @@ def train(
             )
 
             # test predicted sr
-            if show_recon and iterations % 1_000 == 0:
+            if show_recon and iterations % 5_000 == 0:
                 # NOTE: only used to validate code
                 recon_x = recon_x[:64]
 
@@ -234,7 +254,7 @@ def train(
                 logger.print("saved performances")
 
             # log loss
-            if iterations % 50 == 0:
+            if iterations % 500 == 0:
                 logger.log_scalar("denoised_loss", diff_loss.item(), iterations)
 
 if __name__ == "__main__":
@@ -242,8 +262,8 @@ if __name__ == "__main__":
     file_dir = os.path.dirname(py_path)
     dataset_folder = os.path.join(os.path.dirname(file_dir), 'PanDataset')
     train(
-        train_dataset_folder=os.path.join(dataset_folder, 'WV2_data', 'train128'),
-        valid_dataset_folder=os.path.join(dataset_folder, 'WV2_data', 'test128'),
+        train_dataset_folder=os.path.join(dataset_folder, 'GF2_data', 'train128'),
+        valid_dataset_folder=os.path.join(dataset_folder, 'GF2_data', 'test128'),
         ms_num_channel=3,
         pan_num_channel=1,
         image_size=128,
@@ -251,7 +271,7 @@ if __name__ == "__main__":
         n_steps=500,
         max_iterations=400_000,
         batch_size=1,
-        lr_d=1e-5,
+        lr_d=1e-4,
         show_recon=True,
         pretrain_weight=None,
         pretrain_iterations=None,

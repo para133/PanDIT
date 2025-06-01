@@ -1,5 +1,6 @@
 import os
-import cv2
+from PIL import Image
+import numpy as np
 
 # 统计不同通道数的图像数量
 def count_channels_in_images(folder_path):
@@ -9,15 +10,16 @@ def count_channels_in_images(folder_path):
     for image_file in os.listdir(folder_path):
         if image_file.lower().endswith('.tif'):
             image_path = os.path.join(folder_path, image_file)
-            img = cv2.imread(image_path)
+            img = Image.open(image_path)
+            mode = img.mode
+            img = np.array(img)    
 
             if img is None:
                 print(f"Unable to open image: {image_file}")
                 continue
 
             # 检查图像的通道数
-            channels = img.shape[2] 
-            
+            channels = img.shape[2]
             if channels in channel_count:
                 channel_count[channels] += 1
             else:
@@ -25,7 +27,7 @@ def count_channels_in_images(folder_path):
 
     return channel_count
 
-folder_path = r"E:\code\PanSharpening\PanDataset\WV2_data\train128\ms_HR" 
+folder_path = r"E:\code\PanSharpening\PanDataset\WV3_data\test128\ms" 
 channel_count = count_channels_in_images(folder_path)
 
 print("统计结果：")

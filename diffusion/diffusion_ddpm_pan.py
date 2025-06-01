@@ -10,6 +10,7 @@ import numpy as np
 from tqdm import tqdm
 
 from utils.loss_utils import HybridL1SSIM
+from utils.loss_utils import HybridL1SAM
 
 #### this is a test
 
@@ -149,13 +150,14 @@ class GaussianDiffusion(nn.Module):
         loss_type="l2",
         conditional=True,
         schedule_opt=None,
-        device="cuda:0",
+        device="cuda",
         clamp_range=(-1.0, 1.0),
         clamp_type="abs",
         pred_mode="noise",
         p2_loss_weight_gamma=0.0,
         # p2 loss weight, from https://arxiv.org/abs/2204.00227 - 0 is equivalent to weight of 1 across time - 1. is recommended
         p2_loss_weight_k=1,
+        self_condition=True,
     ):
         super().__init__()
         self.channels = channels
@@ -168,7 +170,7 @@ class GaussianDiffusion(nn.Module):
         self.clamp_type = clamp_type
         assert clamp_type in ["abs", "dynamic"]
         assert pred_mode in ["noise", "x_start", "pred_v"]
-        assert loss_type in ["l1", "l2", "l1ssim"]
+        assert loss_type in ["l1", "l2", "l1ssim", "l1sam"]
         # p2 loss weight
         self.p2_loss_weight_gamma = p2_loss_weight_gamma
         self.p2_loss_weight_k = p2_loss_weight_k
@@ -179,9 +181,7 @@ class GaussianDiffusion(nn.Module):
         self.set_loss(device)
 
         self.pred_mode = pred_mode
-        self.self_condition = self.model.self_condition
-        self.pred_var = self.model.pred_var
-        assert self.pred_var == False, "not supported yet"
+        self.self_condition = self_condition
 
         self.thresholding_max_val = 1.0
         self.dynamic_thresholding_ratio = 0.8
@@ -193,6 +193,8 @@ class GaussianDiffusion(nn.Module):
             self.loss_func = nn.MSELoss().to(device)
         elif self.loss_type == "l1ssim":
             self.loss_func = HybridL1SSIM(channel=self.channels).to(device)
+        elif self.loss_type == "l1sam":
+            self.loss_func = HybridL1SAM(lambda_l1=1.0, lambda_sam=0.5).to(device)
         else:
             raise NotImplementedError()
 
@@ -363,9 +365,6 @@ class GaussianDiffusion(nn.Module):
             if model_out is None:
                 model_out = model_forward(x, t, condition_x, self_cond)
 
-            if self.pred_var:
-                model_out, pred_var = model_out.chunk(2, dim=1)
-
             if self.pred_mode == "noise":
                 x_recon = self.predict_start_from_noise(x, t=t, noise=model_out)
             elif self.pred_mode == "x_start":
@@ -377,9 +376,6 @@ class GaussianDiffusion(nn.Module):
         else:  # no condition
             if model_out is None:
                 model_out = model_forward(x, t, self_cond=self_cond)
-
-            if self.pred_var:
-                model_out, pred_var = model_out.chunk(2, dim=1)
 
             if self.pred_mode == "noise":
                 x_recon = self.predict_start_from_noise(x, t=t, noise=model_out)
@@ -401,16 +397,6 @@ class GaussianDiffusion(nn.Module):
         model_mean, posterior_variance, posterior_log_variance = self.q_posterior(
             x_start=x_recon, x_t=x, t=t
         )
-
-        if self.pred_var:
-            min_log = posterior_log_variance
-            max_log = extract(self.posterior_log_variance_max, t, x.shape)
-            # var_interp_frac = unnormalize_to_zero_to_one(var_interp_frac_unnormalized)
-            var_interp_frac = torch.sigmoid(pred_var)
-            posterior_log_variance = (
-                var_interp_frac * max_log + (1 - var_interp_frac) * min_log
-            )
-            posterior_variance = posterior_log_variance.exp()
 
         return model_mean, posterior_variance, posterior_log_variance, x_recon
 
@@ -735,29 +721,7 @@ class GaussianDiffusion(nn.Module):
             recon_x0 = self.predict_start_from_v(x_noisy, t, v)
             loss = self.loss_func(v, model_predict)
 
-        # predict variance
-        if self.pred_var:
-            true_mean, _, true_log_var_clipped = self.q_posterior(x_start, x_noisy, t)
-            model_mean, _, model_log_variance = self.p_mean_variance(
-                x_noisy,
-                t,
-                clip_denoised=True,
-                condition_x=cond,
-                self_cond=x_self_cond,
-                model_out=model_predict,
-            )
-            detached_model_mean = model_mean.detach()
-
-            kl = normal_kl(
-                true_mean, true_log_var_clipped, detached_model_mean, model_log_variance
-            )
-            kl = meanflat(kl) * NAT
-            decoder_nll = -discretized_gaussian_log_likelihood(
-                x_start, means=detached_model_mean, log_scales=0.5 * model_log_variance
-            )
-            decoder_nll = meanflat(decoder_nll) * NAT
-        else:
-            decoder_nll = 0.0
+        decoder_nll = 0.0
 
         loss = (
             loss * extract(self.p2_loss_weight, t, loss.shape)
@@ -799,7 +763,6 @@ if __name__ == "__main__":
         cond_channel=9,
         image_size=64,
         self_condition=True,
-        pred_var=False,
     ).cuda()
     sr = torch.randn(2, 9, 64, 64).cuda()
     hr = torch.randn(2, 8, 64, 64).cuda()

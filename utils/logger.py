@@ -1,6 +1,6 @@
 import time
 from functools import partial
-import sys
+import shutil
 
 import shortuuid
 from torch import Tensor
@@ -21,7 +21,7 @@ def generate_id(length: int = 8) -> str:
 
 
 class TensorboardLogger:
-    def __init__(self, place="./runs/", file_dir='./logs/', file_logger_name=None, random_id=True, tb_comment=None,
+    def __init__(self, place="./runs/", file_dir='./logs/', file_logger_name=None, random_id=False, tb_comment=None,
                  **tb_kwargs) -> None:
         """tensorboard logger
 
@@ -51,13 +51,15 @@ class TensorboardLogger:
         else:
             # use time as dir name
             stf_time = time.strftime("%m-%d %H:%M", time.localtime())
-            name = stf_time + '' if tb_comment is None else '_{}'.format(tb_comment)
+            name = stf_time + '' if tb_comment is None else '{}'.format(tb_comment)
             place = os.path.join(place, name)
             os.mkdir(place)
 
         self.writer = writer.SummaryWriter(place, **tb_kwargs)
 
-        assert file_logger_name is not None, '@file_logger_name should be set'
+        file_dir = os.path.join(file_dir, file_logger_name)
+        os.makedirs(file_dir, exist_ok=True)
+        shutil.copyfile('./models/PanVIT_modules.py', os.path.join(file_dir, 'PanVIT_modules.py'))
         self.file_writer = PrintLogger(os.path.join(file_dir, file_logger_name + '.txt'))
 
         self._tb_print = partial(self.file_writer.log)

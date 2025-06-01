@@ -1,4 +1,3 @@
-import functools
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -11,10 +10,9 @@ class ResidualDenseBlock(nn.Module):
         self.conv1 = nn.Conv2d(nf, gc, 3, 1, 1, bias=bias)
         self.conv2 = nn.Conv2d(nf + gc, gc, 3, 1, 1, bias=bias)
         self.conv3 = nn.Conv2d(nf + 2 * gc, gc, 3, 1, 1, bias=bias)
-        self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        self.lrelu = nn.LeakyReLU(negative_slope=0.1)
         self.out_conv = nn.Conv2d(nf + 3 * gc, nf, 1, bias=bias)  
         self.gamma = nn.Parameter(torch.zeros(1))
-
 
     def forward(self, x):
         x1 = self.lrelu(self.conv1(x))
@@ -42,13 +40,13 @@ class GroupResidualDenseBlock(nn.Module):
         return out * self.gamma + x
     
 class ChannelAttention(nn.Module):
-    def __init__(self, in_channels, reduction=4):
+    def __init__(self, in_channels, out_channels, reduction=4):
         super(ChannelAttention, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)  
         self.max_pool = nn.AdaptiveMaxPool2d(1)  
         # 模拟全连接
-        self.fc1 = nn.Conv2d(in_channels, in_channels // reduction, 1, bias=False)
-        self.fc2 = nn.Conv2d(in_channels // reduction, in_channels, 1, bias=False)
+        self.fc1 = nn.Conv2d(in_channels, in_channels // reduction, 1)
+        self.fc2 = nn.Conv2d(in_channels // reduction, in_channels, 1)
 
     def forward(self, x):
         avg_out = self.fc2(F.relu(self.fc1(self.avg_pool(x))))  

@@ -186,7 +186,51 @@ class CharbonnierLoss(torch.nn.Module):
     def forward(self, img1, img2) -> Tensor:
         return elementwise_charbonnier_loss(img1, img2, eps=self.eps).mean()
 
+class SAMLoss(nn.Module):
+    def __init__(self, eps=1e-8):
+        super().__init__()
+        self.eps = eps  # 防止除零错误
 
+    def forward(self, pred, target):
+        # pred: 生成图像 (B, C, H, W)
+        # target: 参考图像 (B, C, H, W)
+        # 计算光谱角度
+        dot_product = (pred * target).sum(dim=1)  # (B, H, W)
+        pred_norm = torch.norm(pred, p=2, dim=1)  # (B, H, W)
+        target_norm = torch.norm(target, p=2, dim=1)  # (B, H, W)
+        cosine_similarity = dot_product / (pred_norm * target_norm + self.eps)  # (B, H, W)
+        sam = torch.acos(torch.clamp(cosine_similarity, -1 + self.eps, 1 - self.eps))  # (B, H, W)
+        return sam.mean()  # 返回平均SAM值
+    
+class HybridL1SAM(nn.Module):
+    def __init__(self, lambda_sam=1.0, lambda_l1=1.0, eps=1e-8):
+        super().__init__()
+        self.lambda_sam = lambda_sam  # SAM损失权重
+        self.lambda_l1 = lambda_l1  # L1损失权重
+        # self.lambda_spatial = lambda_spatial  # 空间细节损失权重
+        self.sam_loss = SAMLoss(eps=eps)
+        self.l1_loss = nn.L1Loss()
+
+    # def spatial_loss(self, pred, target):
+    #     # 计算梯度差异作为空间细节损失
+    #     pred_grad_x = torch.abs(pred[:, :, :, 1:] - pred[:, :, :, :-1])
+    #     pred_grad_y = torch.abs(pred[:, :, 1:, :] - pred[:, :, :-1, :])
+    #     target_grad_x = torch.abs(target[:, :, :, 1:] - target[:, :, :, :-1])
+    #     target_grad_y = torch.abs(target[:, :, 1:, :] - target[:, :, :-1, :])
+    #     loss_x = F.l1_loss(pred_grad_x, target_grad_x)
+    #     loss_y = F.l1_loss(pred_grad_y, target_grad_y)
+    #     return (loss_x + loss_y) / 2
+
+    def forward(self, pred, target):
+        # pred: 生成图像 (B, C, H, W)
+        # target: 参考图像 (B, C, H, W)
+        sam_loss = self.sam_loss(pred, target)
+        l1_loss = self.l1_loss(pred, target)
+        # spatial_loss = self.spatial_loss(pred, target)
+        # total_loss = self.lambda_sam * sam_loss + self.lambda_l1 * l1_loss + self.lambda_spatial * spatial_loss
+        total_loss = self.lambda_sam * sam_loss + self.lambda_l1 * l1_loss
+        return total_loss
+    
 def get_loss(loss_type):
     if loss_type == "mse":
         criterion = nn.MSELoss()

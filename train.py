@@ -266,6 +266,8 @@ def parse_args():
     parser.add_argument('--dataset_name', type=str, default='WV2', help='Dataset name')
     parser.add_argument('--ms_num_channel', type=int, default=4, help='Number of multispectral channels')
     parser.add_argument('--pan_num_channel', type=int, default=1, help='Number of panchromatic channels')
+    parser.add_argument('--train_dataset_folder', type=str, default='PanDataset', help='Path to the dataset folder')
+    parser.add_argument('--valid_dataset_folder', type=str, default='PanDataset', help='Path to the validation dataset folder')
     parser.add_argument('--image_size', type=int, default=128, help='Input image size')
     parser.add_argument('--patch_size', type=int, default=8, help='Patch size for processing')
     parser.add_argument('--schedule_type', type=str, default='cosine', choices=['cosine', 'linear'], help='Schedule type for beta schedule')
@@ -293,14 +295,11 @@ def parse_args():
 if __name__ == "__main__":
     py_path = os.path.abspath(__file__) 
     file_dir = os.path.dirname(py_path)
-    dataset_folder = os.path.join(os.path.dirname(file_dir), 'PanDataset')
+    # dataset_folder = os.path.join(os.path.dirname(file_dir), 'PanDataset')
     args = parse_args()
-    # args.pretrain_weight = os.path.join(file_dir, 'checkpoints', 'diffusion_Best_WV3_Pyramid_P8C16L12H16B6-PanDiT_iter_140000.pth')
-    # args.pretrain_iterations = 140_000
-    # args.save_per_iter = 5000
     train(
-        train_dataset_folder=os.path.join(dataset_folder, 'WV2_data', 'train128'),
-        valid_dataset_folder=os.path.join(dataset_folder, 'WV2_data', 'test128'),
+        train_dataset_folder=args.train_dataset_folder,
+        valid_dataset_folder=args.valid_dataset_folder,
         dataset_name=args.dataset_name,
         ms_num_channel=args.ms_num_channel,
         pan_num_channel=args.pan_num_channel,

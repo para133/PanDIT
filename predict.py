@@ -106,8 +106,7 @@ def predict(
             
 def parse_args():
     parser = argparse.ArgumentParser(description="predict script for PanDiT")
-    # parser.add_argument('--train_dataset_folder', type=str, required=True, help='Path to the training dataset folder')
-    # parser.add_argument('--valid_dataset_folder', type=str, required=True, help='Path to the validation dataset folder')
+    parser.add_argument('--dataset_folder', type=str, required=True, help='Path to the validation dataset folder')
     parser.add_argument('--ms_num_channel', type=int, default=4, help='Number of multispectral channels')
     parser.add_argument('--pan_num_channel', type=int, default=1, help='Number of panchromatic channels')
     parser.add_argument('--image_size', type=int, default=128, help='Input image size')
@@ -133,9 +132,7 @@ if __name__ == '__main__':
     args = parse_args()
     py_path = os.path.abspath(__file__) 
     file_dir = os.path.dirname(py_path)
-    dataset_folder = os.path.join(os.path.dirname(file_dir), 'PanDataset', 'WV2_data', 'test128')
-    # dataset_folder = os.path.join(os.path.dirname(file_dir), 'PanDataset', 'fullGF2_data', 'test128')
-    args.weight_path = os.path.join(file_dir, 'checkpoints', 'ema_diffusion_WV2_DDPM_P8C16L12H16B6-PanDiT_iter_80000.pth')
+    dataset_folder = args.dataset_folder
     args.mode = "CMYK"
     args.save_dir = "WV2_ddpm"
     # args.ms_is_GT = False

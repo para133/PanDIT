@@ -93,8 +93,7 @@ def predict(
                 "b * h w",
             )
             cond = cond.to(torch.float32)
-            # sr = diffusion(cond, mode="ddim_sample", section_counts="ddim2")
-            sr = diffusion(cond, mode="ddpm_sample")
+            sr = diffusion(cond, mode="ddim_sample", section_counts="ddim2")
             sr = lms + sr
             sr = sr.clip(0, 1)
             hr = hr.to(sr.device)
@@ -133,8 +132,6 @@ if __name__ == '__main__':
     py_path = os.path.abspath(__file__) 
     file_dir = os.path.dirname(py_path)
     dataset_folder = args.dataset_folder
-    args.mode = "CMYK"
-    args.save_dir = "WV2_ddpm"
     # args.ms_is_GT = False
     os.makedirs(args.save_dir, exist_ok=True)
     predict(

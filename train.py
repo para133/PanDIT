@@ -210,7 +210,6 @@ def train(
                         )
                         cond = cond.to(torch.float32)
                         sr = ema_updater.ema_model(cond, mode="ddim_sample", section_counts="ddim25")
-                        # sr = ema_updater.ema_model(cond, mode="ddpm_sample")
                         sr = sr + lms
                         sr = sr.clip(0, 1)
                         hr = hr.to(sr.device)

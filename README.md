@@ -1,6 +1,9 @@
 # PanDiT
+![main](images/main.png)
 ## Build environment
 ```
+conda create -n PanDiT python==3.11
+conda activate PanDiT
 pip install -r requirements.txt
 ```
 ## Train

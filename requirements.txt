@@ -1,10 +1,11 @@
 beartype==0.21.0
 einops==0.8.1
+mamba_ssm==1.1.1
 matplotlib==3.7.2
 numpy==2.3.1
 opencv_python==4.8.1.78
 Pillow==10.0.1
-Pillow==11.2.1
+Pillow==11.3.0
 scipy==1.11.3
 shortuuid==1.0.13
 tensorboardX==2.6.2.2
